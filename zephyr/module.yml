@@ -1,0 +1,13 @@
+name: hyperpulse
+
+build:
+  cmake: .
+  kconfig: ./Kconfig
+  sysbuild-cmake: sysbuild
+  sysbuild-kconfig: sysbuild/Kconfig
+  settings:
+    board_root: .
+    dts_root: .
+
+samples:
+  - samples

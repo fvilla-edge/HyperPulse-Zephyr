@@ -1,0 +1,39 @@
+// Disabling uart rx pin to get low power
+&uart1 {
+    disable-rx;
+};
+
+/ {
+	chosen {
+		zephyr,console = &uart1;
+		modem,at-host-uart = &uart0;
+	};
+
+	aliases {
+		led0 = &npm1300_led;
+		led1 = &npm1300_led;
+		led3 = &npm1300_led;
+	};
+};
+
+&i2c2 {
+	npm1300_pmic: pmic@6b {
+		compatible = "nordic,npm1300";
+		reg = <0x6b>;
+
+		npm1300_led: leds {
+			compatible = "nordic,npm1300-led";
+			nordic,led0-mode = "host";
+			nordic,led1-mode = "host";
+			nordic,led2-mode = "host";
+		};
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};

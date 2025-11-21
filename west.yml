@@ -1,0 +1,12 @@
+manifest:
+  remotes:
+    - name: nrfconnect
+      url-base: https://github.com/nrfconnect/
+  projects:
+    - name: sdk-nrf
+      path: nrf
+      revision: v3.0.2
+      remote: nrfconnect
+      import: true
+  self:
+    path: modules/lib/myriota-hyperpulse

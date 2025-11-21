@@ -1,0 +1,34 @@
+# Myriota HyperPulse DK configuration
+
+# Copyright (c) 2025, Myriota Pty Ltd, All Rights Reserved
+
+if BOARD_MYRIOTA_HYPERPULSE_DK || BOARD_MYRIOTA_HYPERPULSE_DK_NRF9151_CIRCUITDOJO_NS
+
+# The firmware will be linked into the code-partition (non-secure) defined in DT.
+# Apply this configuration below by setting the Kconfig symbols used by
+# the linker according to the information extracted from DT partitions.
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+	depends on BOARD_MYRIOTA_HYPERPULSE_DK && TRUSTED_EXECUTION_SECURE
+
+if BOARD_MYRIOTA_HYPERPULSE_DK_NRF9151_CIRCUITDOJO_NS
+
+config FLASH_LOAD_OFFSET
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+endif # BOARD_MYRIOTA_HYPERPULSE_DK_NRF9151_CIRCUITDOJO_NS
+
+config BT_HCI_VS
+	default y if BT
+
+config BT_WAIT_NOP
+	default BT && $(dt_nodelabel_enabled,nrf5340_reset)
+
+endif # BOARD_MYRIOTA_HYPERPULSE_DK || BOARD_MYRIOTA_HYPERPULSE_DK_NRF9151_CIRCUITDOJO_NS

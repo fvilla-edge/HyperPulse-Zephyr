@@ -1,0 +1,60 @@
+menu "Myriota HyperPulse Module Dependencies and defaults"
+
+config HYPERPULSE
+    bool "HyperPulse Lib"
+    select FLASH
+    select FLASH_MAP
+    select ZMS
+    select ZMS_LOOKUP_CACHE
+    select EVENTS
+    select REBOOT
+    select POSIX_API
+
+if HYPERPULSE
+  config PM_PARTITION_SIZE_ZMS_STORAGE
+    hex "ZMS Storage Partition Size"
+    default 0
+
+  config ZMS_LOOKUP_CACHE_SIZE
+    int "ZMS lookup cache size in d-words"
+    default 1024
+
+  config HYPERPULSE_AUTO_LIB_INIT
+    bool "Automatically initialize HyperPulse Library"
+    default y
+    help
+        Automatically initialize HyperPulse library when the modem is powered on.
+
+  config PTHREAD_IPC
+    bool
+    default n if POSIX_API
+    help
+      Disabled by default as there are issues with posix api if this is set.
+
+  config POSIX_MAX_FDS
+    int
+    default 10
+    help
+      Defines the maximum number of file descriptors that can be
+      opened concurrently using POSIX APIs like `poll()` etc.
+
+  config NET_SOCKETS_POLL_MAX
+    int
+    default POSIX_MAX_FDS
+    help
+      Value needs to be in sync with POSIX_MAX_FDS
+
+  config HEAP_MEM_POOL_SIZE
+    int
+    default 1280
+    help
+      Provide the minimum 1KB requested by kernel
+
+endif
+
+endmenu
+
+module = HYPERPULSE
+module-str = Myriota-HyperPulse
+
+source "subsys/logging/Kconfig.template.log_config"

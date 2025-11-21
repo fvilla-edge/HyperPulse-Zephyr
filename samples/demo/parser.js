@@ -1,0 +1,58 @@
+/**
+ * Copyright (c) 2021-2025, Myriota Pty Ltd, All Rights Reserved
+ * SPDX-License-Identifier: BSD-3-Clause-Attribution
+ *
+ * This file is licensed under the BSD with attribution (the "License"); you
+ * may not use these files except in compliance with the License.
+ *
+ * You may obtain a copy of the License here:
+ * LICENSE-BSD-3-Clause-Attribution.txt and at
+ * https://spdx.org/licenses/BSD-3-Clause-Attribution.html
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * HyperPulse Demo Application Tagio Payload Parser
+ */
+
+const payload_raw = payload.find(x => x.variable === 'payload_raw' || x.variable === 'payload' ||
+				      x.variable === 'data');
+if (payload_raw) {
+	try {
+        /* Convert the data from Hex to Javascript Buffer. */
+		const buffer = Buffer.from(payload_raw.value, 'hex');
+
+        /* Extract data */
+		let data = [];
+        data.push({ variable: 'sequence_number', value: buffer.readInt32LE(0) });
+        data.push({ variable: 'time', value: buffer.readUInt32LE(4) });
+        data.push({ variable: 'latitude', value: buffer.readInt32LE(8) * 1e-07 });
+        data.push({ variable: 'longitude', value:  buffer.readInt32LE(12) * 1e-07 });
+        data.push({ variable: 'altitude', value:  buffer.readInt16LE(16),  unit : "m" });
+        data.push({ variable: 'onboard_temperature', value: buffer.readInt8(18), unit : "°C" });
+        data.push({ variable: 'battery_voltage', value: buffer.readInt16LE(19), unit : "mV" });
+
+        /* Add location entry to support the use tagio map widgets */
+        data.push({
+            variable: 'location',
+            value: 'Device Location',
+            location: {
+                lat: data.find(x => x.variable === 'latitude').value,
+                lng: data.find(x => x.variable === 'longitude').value,
+            },
+        });
+
+        /* Add time to data fields */
+        const date = new Date(0);
+        date.setUTCSeconds(data.find(x => x.variable === 'time').value);
+        data = data.map(x => ({ ...x, time: date }));
+
+        payload = payload.concat(data.map(x => ({ ...x })));
+    } catch (e) {
+        /* Print the error to the Live Inspector */
+        console.error(e);
+
+        /* Return the variable parse_error for debugging */
+        payload = [{ variable: 'parse_error', value: e.message }];
+    }
+}

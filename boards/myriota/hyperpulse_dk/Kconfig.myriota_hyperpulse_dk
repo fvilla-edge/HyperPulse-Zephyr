@@ -1,0 +1,4 @@
+# Copyright (c) 2025, Myriota Pty Ltd, All Rights Reserved
+
+config BOARD_MYRIOTA_HYPERPULSE_DK
+	select SOC_NRF9151_LACA

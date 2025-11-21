@@ -1,0 +1,14 @@
+identifier: myriota_hyperpulse_dk_nrf9151_circuitdojo_ns
+name: Myriota-HyperPulse-DK-nRF9151-Circuit-Dojo-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 128
+flash: 192
+supported:
+  - i2c
+  - pwm
+  - watchdog

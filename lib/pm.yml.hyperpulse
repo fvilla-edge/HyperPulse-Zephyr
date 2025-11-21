@@ -1,0 +1,14 @@
+#include <zephyr/autoconf.h>
+
+# Use the last partition in flash to store hyperpulse_storage_network
+# and hyperpulse_storage_platform.
+
+hyperpulse_storage_network:
+  placement: {before: [end]}
+  inside: [nonsecure_storage]
+  size: 0x30000
+
+hyperpulse_storage_platform:
+  placement: {after: [hyperpulse_storage_network]}
+  inside: [nonsecure_storage]
+  size: 0x4000

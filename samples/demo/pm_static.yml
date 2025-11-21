@@ -1,0 +1,31 @@
+# Note:
+# This file (`pm_static.yml`) defines fixed starting addresses for
+# `hyperpulse_storage_network` and `hyperpulse_storage_platform`. These are
+# required when using the default Network Information provided by
+# Myriota.
+#
+# When present, `pm_static.yml` overrides the dynamically assigned
+# address (see `pm.yml.hyperpulse`). Users relying on dynamic
+# address assignment or a custom `pm_static.yml` must generate
+# Network Information with the provided tool (TBD), supplying the
+# starting address of `hyperpulse_storage_network` as input.
+
+nonsecure_storage:
+  address: 0xc6000
+  size: 0x3a000
+  span: [hyperpulse_storage_network, hyperpulse_storage_platform, littlefs_storage]
+
+littlefs_storage:
+  address: 0xc6000
+  size: 0x6000
+  inside: [nonsecure_storage]
+
+hyperpulse_storage_network:
+  address: 0xcc000
+  size: 0x30000
+  inside: [nonsecure_storage]
+
+hyperpulse_storage_platform:
+  address: 0xfc000
+  size: 0x4000
+  inside: [nonsecure_storage]

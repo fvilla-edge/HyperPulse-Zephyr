@@ -1,0 +1,10 @@
+menu "Myriota HyperPulse Module Sysbuild Dependencies and defaults"
+
+config HYPERPULSE_MERGE_APP_AND_NETWORK_INFO
+    bool "Automatically merge the application hex with network info post build"
+    default n
+    help
+      To enable this feature, set SB_CONFIG_HYPERPULSE_MERGE_APP_AND_NETWORK_INFO=y
+      in sysbuild.conf in the application directory.
+
+endmenu

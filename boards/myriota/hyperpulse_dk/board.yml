@@ -1,0 +1,14 @@
+board:
+  name: myriota_hyperpulse_dk
+  vendor: myriota
+  socs:
+    - name: nrf9151
+      variants:
+        - name: circuitdojo_ns
+  revision:
+    format: number
+    default: "3"
+    revisions:
+      - name: "1"
+      - name: "2"
+      - name: "3"

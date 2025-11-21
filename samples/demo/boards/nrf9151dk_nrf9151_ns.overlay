@@ -1,0 +1,11 @@
+/* Disable UART1, for power saving. */
+&uart1 {
+	status = "disabled";
+};
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};

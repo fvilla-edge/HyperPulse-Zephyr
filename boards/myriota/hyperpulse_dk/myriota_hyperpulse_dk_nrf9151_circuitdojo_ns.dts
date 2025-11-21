@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025, Myriota Pty Ltd, All Rights Reserved
+ */
+
+/dts-v1/;
+#include <nordic/nrf9151ns_laca.dtsi>
+#include "circuitdojo_feather_nrf9151_common.dtsi"
+
+/ {
+    model = "Myriota HyperPulse DK (Circuitdojo Feather nRF9151 Module)";
+    compatible = "myriota,hyperpulse_dk";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0_ns;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};
