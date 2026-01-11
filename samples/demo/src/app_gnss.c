@@ -24,7 +24,6 @@
 
 LOG_MODULE_REGISTER(app_gnss, LOG_LEVEL_INF);
 
-#define GNSS_FIX_CHECK_RETRY_SECS     10
 #define LOCATION_UPDATE_TIMEOUT_SECS  360
 #define LOCATION_REQUEST_TIMEOUT_SECS 90
 #define LOCATION_MSGQ_TIMEOUT_MS      5000
@@ -73,15 +72,13 @@ void app_gnss_wait_for_valid_fix(void)
 	// Wait until Modem URC handler pushes a location info into the queue.
 	modem_location_info_t location = {0};
 	while (1) {
-		if (k_msgq_get(&location_info_queue, &location, K_SECONDS(1)) == 0) {
+		if (k_msgq_get(&location_info_queue, &location, K_MSEC(100)) == 0) {
 			// A GNSS fix has been obtained.
 			break;
 		} else {
 			// Signal waiting for a GNSS fix.
-			hardware_control_flash_led(LED_2, GNSS_FIX_CHECK_RETRY_SECS);
+			hardware_control_flash_led(LED_2, 1);
 		}
-
-		k_msleep(10);
 	}
 
 	return;

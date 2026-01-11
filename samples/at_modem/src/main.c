@@ -1,5 +1,5 @@
 /****************************************************************
- * Copyright (c) 2024, Myriota Pty Ltd, All Rights Reserved
+ * Copyright (c) 2025-2026, Myriota Pty Ltd, All Rights Reserved
  * @file  main.c
  * @brief Entry point for application
  *

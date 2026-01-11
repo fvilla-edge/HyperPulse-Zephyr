@@ -1,8 +1,8 @@
-# Myriota HyperPulse™ Zephyr Module 
+# Myriota HyperPulse™ Zephyr Library 
 [![Docs](https://img.shields.io/badge/Docs-Online-blue)](https://myriota.github.io/HyperPulse-Library-Docs/)
 
-The Myriota HyperPulse™ Module provides the software solution for enabling IoT connectivity over Myriota's Non-Terrestrial Network(NTN).
-It provides users with necessary source files and artifacts to integrate into their applications. The module comes
+The Myriota HyperPulse™ Library provides the software solution for enabling IoT connectivity over Myriota's Non-Terrestrial Network(NTN).
+It provides users with necessary source files and artifacts to integrate into their applications. The library comes
 bundled with sample applications and reference documentation for accelerated product development.
 
 > [!TIP]
@@ -11,12 +11,12 @@ bundled with sample applications and reference documentation for accelerated pro
 > https://myriota.github.io/HyperPulse-Library-Docs/
 
 > [!NOTE]
-> Currently, this module supports Nordic Semiconductor nRF9151 SoC only.
+> Currently, this library supports Nordic Semiconductor nRF9151 SoC only.
 
 
 ### Setup For Local Installation
 
-There are different ways to setup the HyperPulse Zephyr module, depending on your preferred development environment.
+There are different ways to setup the HyperPulse Zephyr library, depending on your preferred development environment.
 1. [Using Visual Studio Code and the nRF Connect for VS Code extension](#nrf-connect-for-visual-studio-code)
 2. [Using command line and nRF Util](#command-line-and-nrf-util)
 
@@ -85,12 +85,15 @@ for example, the  `modules/lib/myriota-hyperpulse/samples/demo` folder.
 
 2.3. Select the target board
 
-  The supported board targets for the HyperPulse-Zephyr module are:
-  1. myriota_hyperpulse_dk/nrf9151/circuitdojo_ns
-  2. nrf9151dk/nrf9151/ns
+  The following board targets are tested and supported by the HyperPulse-Zephyr sample applications:
+  1. nRF9151 DK (target name: `nrf9151dk/nrf9151/ns`)
+  2. Myriota HyperPulse DK (target name:`myriota_hyperpulse_dk/nrf9151/circuitdojo_ns`)
 
 > [!TIP]
 > It is recommended to set the build directory as `build/<board>`.
+
+> [!TIP]
+> If you have custom hardware, you can build the sample applications by migrating the board configuration accordingly.
 
 2.4. Please ensure the `Use sysbuild` checkbox is checked.
 
@@ -111,6 +114,10 @@ In the meantime, please follow the [command line instructions](#7-programming-de
 
 we're working on ways to generate and flash Network Information from the UI in VSCode.
 In the meantime, please follow the [command line instructions](#8-network-information)
+
+### 5. Modem Firmware
+
+Please follow the [command line instructions](#9-modem-firmware)
 
 ---
 
@@ -146,7 +153,7 @@ In the meantime, please follow the [command line instructions](#8-network-inform
   nrfutil toolchain-manager env --as-script cmd > <ncs_base_dir>\env\ncs_3.0.2.cmd
   ```
 
-### 4. Adding the HyperPulse Module:
+### 4. Adding the HyperPulse Library:
 
   ```
   cd <ncs_base_dir>/v3.0.2
@@ -156,12 +163,11 @@ In the meantime, please follow the [command line instructions](#8-network-inform
   west update
   ```
 
-### 5. Using the HyperPulse Module:
+### 5. Using the HyperPulse Library:
 
-Refer to sample applications provided with this module to speed up your app development.
+Refer to sample applications provided with this library to speed up your app development.
 1. [Demo Application](./samples/demo/README.md)
 2. [AT Modem Application](./samples/at_modem/README.md)
-
 
 ### 6. Building Applications
 
@@ -182,11 +188,12 @@ Windows:
 
 
 #### Supported Target Boards
-Below is a list of supported target boards tested as working and supported by the Myriota HyperPulse™ Module
-
+The following board targets are tested and supported by the HyperPulse-Zephyr sample applications:
 1. nRF9151 DK (target name: `nrf9151dk/nrf9151/ns`)
 2. Myriota HyperPulse DK (target name:`myriota_hyperpulse_dk/nrf9151/circuitdojo_ns`)
 
+> [!TIP]
+> If you have custom hardware, you can build the sample applications by migrating the board configuration accordingly.
 
 #### Build command
 ```
@@ -346,3 +353,25 @@ pyocd erase --chip -t nrf91
 pyocd load --target nRF91 <path to app_and_network_info_merged.hex>
 ```
 
+### 9. Modem Firmware
+
+Ensure the device is running the latest nRF9151 SiP NTN modem firmware,
+which can be downloaded from Nordic Semiconductor’s nRF9151 product [download page](https://www.nordicsemi.com/Products/nRF9151/Download).
+
+#### Programming Modem Firmware
+
+1. nRF9151DK Board
+```
+nrfutil device program --firmware <modem_fw_zip_file>
+```
+
+For example:
+```
+nrfutil device program --firmware mfw_nrf9151-ntn_1.0.0-1.alpha.zip
+```
+
+2. HyperPulse Developer Kit (Circuit Dojo)
+
+```
+pyocd cmd -t nrf91 -c 'nrf91-update-modem-fw <modem_fw_zip_file>'
+```
