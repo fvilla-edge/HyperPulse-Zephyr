@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(configuration, LOG_LEVEL_INF);
 #define CONFIG_SETT_KEY         "myriota"
 #define CONFIG_SETT_MSG_PERIOD  "period"
 #define CONFIG_SETT_GNSS_FIX    "gnss_fix"
+#define CONFIG_SETT_HUM_ENABLE  "hum_enable"
 #define DEFAULT_MSG_PERIOD_SECS 3600
 
 #define STORAGE_PARTITION    storage_partition
@@ -38,11 +39,13 @@ LOG_MODULE_REGISTER(configuration, LOG_LEVEL_INF);
 // The below variables are configurable through the shell interface
 static uint32_t tx_msg_period = DEFAULT_MSG_PERIOD_SECS;
 static bool enable_gnss_fix = false;
+static bool enable_humidity = false;
 
 // The mutexes are to ensure the configuration values are not
 // read and written at the same time between the getters and setters.
 K_MUTEX_DEFINE(msg_period_mutex);
 K_MUTEX_DEFINE(gnss_fix_mutex);
+K_MUTEX_DEFINE(hum_enable_mutex);
 
 static int config_save_value(const char *sub_key, const void *data, size_t len)
 {
@@ -76,6 +79,17 @@ bool config_get_enable_gnss_state(void)
 	k_mutex_lock(&gnss_fix_mutex, K_FOREVER);
 	enable = enable_gnss_fix;
 	k_mutex_unlock(&gnss_fix_mutex);
+
+	return enable;
+}
+
+bool config_get_enable_humidity_state(void)
+{
+	bool enable;
+
+	k_mutex_lock(&hum_enable_mutex, K_FOREVER);
+	enable = enable_humidity;
+	k_mutex_unlock(&hum_enable_mutex);
 
 	return enable;
 }
@@ -114,6 +128,20 @@ static int config_set_enable_gnss_state(bool enable)
 	return 0;
 }
 
+static int config_set_enable_humidity_state(bool enable)
+{
+	int err = config_save_value(CONFIG_SETT_HUM_ENABLE, &enable, sizeof(enable));
+	if (err != 0) {
+		return err;
+	}
+
+	k_mutex_lock(&hum_enable_mutex, K_FOREVER);
+	enable_humidity = enable;
+	k_mutex_unlock(&hum_enable_mutex);
+
+	return 0;
+}
+
 static int myriota_settings_set(const char *setting, size_t length, settings_read_cb read_cb,
 				void *cb_arg)
 {
@@ -129,6 +157,12 @@ static int myriota_settings_set(const char *setting, size_t length, settings_rea
 
 	} else if (settings_name_steq(setting, CONFIG_SETT_GNSS_FIX, &next)) {
 		err = read_cb(cb_arg, &enable_gnss_fix, sizeof(enable_gnss_fix));
+		if (err >= 0) {
+			return 0;
+		}
+		return err;
+	} else if (settings_name_steq(setting, CONFIG_SETT_HUM_ENABLE, &next)) {
+		err = read_cb(cb_arg, &enable_humidity, sizeof(enable_humidity));
 		if (err >= 0) {
 			return 0;
 		}
@@ -175,8 +209,9 @@ int config_init(void)
 		return err;
 	}
 
-	LOG_INF("Configuration initialized: period=%u s, GNSS=%s", tx_msg_period,
-		enable_gnss_fix ? "enabled" : "disabled");
+	LOG_INF("Configuration initialized: period=%u s, GNSS=%s, Humidity=%s", tx_msg_period,
+		enable_gnss_fix ? "enabled" : "disabled",
+		enable_humidity ? "enabled" : "disabled");
 
 	return 0;
 }
@@ -222,6 +257,29 @@ static void sh_config_gnss_fix(const struct shell *sh, size_t argc, char **argv)
 	shell_error(sh, "Usage: cfg gnss_fix [0|1]");
 }
 
+static void sh_config_hum_enable(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		shell_print(sh, "%s", (config_get_enable_humidity_state() ? "enabled" : "disabled"));
+		return;
+	}
+
+	if (argc == 2) {
+		int val = strtol(argv[1], NULL, 10);
+		if (val != true && val != false) {
+			shell_error(sh, "Value must be 0 or 1");
+			return;
+		}
+
+		if (config_set_enable_humidity_state(val) == 0) {
+			shell_print(sh, "OK");
+		}
+		return;
+	}
+
+	shell_error(sh, "Usage: cfg hum_enable [0|1]");
+}
+
 /* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_cfg,
 	SHELL_CMD(period, NULL,
@@ -230,6 +288,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cfg,
 	SHELL_CMD(gnss_fix, NULL,
 		"Get/set GNSS fix enable state (0=disable, 1=enable)",
 		sh_config_gnss_fix),
+	SHELL_CMD(hum_enable, NULL,
+		"Get/set humidity field enable state (0=disable, 1=enable)",
+		sh_config_hum_enable),
 	SHELL_SUBCMD_SET_END
 );
 /* clang-format on */

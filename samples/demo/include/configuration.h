@@ -50,6 +50,13 @@ uint32_t config_get_uplink_message_period(void);
  */
 bool config_get_enable_gnss_state(void);
 
+/**
+ * @brief Check if humidity field is enabled for messages.
+ *
+ * @return true if humidity reporting is enabled, false otherwise.
+ */
+bool config_get_enable_humidity_state(void);
+
 /** @} */ // end of app_config
 
 #endif /* CONFIGURATION_H */
