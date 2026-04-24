@@ -65,7 +65,7 @@ int main(void)
 	// Wait for an initial valid GNSS fix before starting the message scheduler
 	app_gnss_wait_for_valid_fix();
 
-	printk("HOLUU\n");
+	printk("HOLU\n");
 
 	modem_enable_downlink_message_notification();
 
