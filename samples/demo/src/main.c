@@ -32,6 +32,7 @@
 #include "hyperpulse_lib.h"
 #include "modem.h"
 #include "periodic_uplink.h"
+#include "potentiometer.h"
 
 LOG_MODULE_REGISTER(demo_app, LOG_LEVEL_INF);
 
@@ -62,10 +63,13 @@ int main(void)
 	// Signal initialising complete
 	hardware_control_flash_led(LED_1, 1);
 
+	int err = potentiometer_init();
+	if (err != 0) {
+		LOG_ERR("Failed to initialise potentiometer ADC (err: %d)", err);
+	}
+
 	// Wait for an initial valid GNSS fix before starting the message scheduler
 	app_gnss_wait_for_valid_fix();
-
-	printk("HOLU\n");
 
 	modem_enable_downlink_message_notification();
 

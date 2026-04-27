@@ -20,6 +20,7 @@ file(
   src/main.c
   src/modem.c
   src/modem_urc.c
+  src/potentiometer.c
   src/periodic_uplink.c)
 target_sources(app PRIVATE ${app_sources})
 
