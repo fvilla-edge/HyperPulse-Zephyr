@@ -49,6 +49,8 @@ int main(void)
 	// Initialise configuration
 	config_init();
 
+
+	
 	// Start shell after configuration has been initialised
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL)) {
 		shell_start(shell_backend_uart_get_ptr());
@@ -62,6 +64,8 @@ int main(void)
 
 	// Wait for an initial valid GNSS fix before starting the message scheduler
 	app_gnss_wait_for_valid_fix();
+
+	printk("HOLU\n");
 
 	modem_enable_downlink_message_notification();
 

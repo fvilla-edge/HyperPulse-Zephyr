@@ -1,7 +1,7 @@
 # Myriota HyperPulse Demo Application
 
 The **Demo Application** is a reference implementation designed to demonstrate
-**temperature, battery voltage and location reporting** over Myriota’s
+**temperature, battery voltage, humidity, num and location reporting** over Myriota’s
 **HyperPulse NTN (Non-Terrestrial Network)**.  
 
 > [!IMPORTANT]
@@ -9,7 +9,7 @@ The **Demo Application** is a reference implementation designed to demonstrate
 
 ## Key Features
 
-- Temperature and battery voltage monitoring
+- Temperature, battery voltage, humidity and num reporting
 - GNSS-based location acquisition
 - Configurable reporting interval (default: 24 messages per day)
 - Shell interface for runtime configuration
@@ -18,7 +18,7 @@ The **Demo Application** is a reference implementation designed to demonstrate
 ## Operation
 
 The application uses the device’s onboard GNSS receiver to obtain its current
-location, alongside the internal temperature and battery voltage. These
+location, alongside the internal temperature, battery voltage, humidity and num field. These
 values are then packaged into a message and scheduled for transmission. By
 default, the application transmits **24 messages per day** (one per hour).  
 
@@ -58,6 +58,18 @@ populating a user message.
 > Acquiring GNSS fixes consumes significant energy.  
 > Using frequent GNSS fixes (e.g., with a short reporting period) will **reduce battery life**.  
 
+### Humidity Field Enable
+
+Controls whether the humidity field is included in the message as a valid fixed
+demo value.
+
+- If **enabled**, the message includes a hardcoded humidity value (`65%`).
+- If **disabled** (default), humidity is sent as an invalid sentinel value (`255`).
+
+- **Commands:**
+  - `cfg hum_enable` - Display humidity field state (enabled/disabled)
+  - `cfg hum_enable <1|0>` - Enable (`1`) or disable (`0`) humidity field reporting
+
 
 ## Message Payload Format
 
@@ -70,6 +82,8 @@ populating a user message.
 | 16 - 17 | Altitude | int16 | The elevation of the device in meters. |
 | 18 | Temperature | int8_t | Internal temperature in degrees celsius. |
 | 19 - 20 | Battery Voltage | uint16 | Battery voltage in milli-volts. |
+| 21 | Humidity | uint8 | Humidity percent. Sent as `65` when enabled, or `255` when disabled. |
+| 22 | Num | uint8 | Fixed hardcoded demo value: `15`. |
 
 > [!IMPORTANT]
 > Message data types are packed using little endian byte ordering.

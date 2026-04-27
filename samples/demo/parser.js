@@ -30,7 +30,9 @@ if (payload_raw) {
         data.push({ variable: 'longitude', value:  buffer.readInt32LE(12) * 1e-07 });
         data.push({ variable: 'altitude', value:  buffer.readInt16LE(16),  unit : "m" });
         data.push({ variable: 'onboard_temperature', value: buffer.readInt8(18), unit : "°C" });
-        data.push({ variable: 'battery_voltage', value: buffer.readInt16LE(19), unit : "mV" });
+        data.push({ variable: 'battery_voltage', value: buffer.readUInt16LE(19), unit : "mV" });
+        data.push({ variable: 'humidity_percent', value: buffer.readUInt8(21), unit : "%" });
+        data.push({ variable: 'num', value: buffer.readUInt8(22) });
 
         /* Add location entry to support the use tagio map widgets */
         data.push({

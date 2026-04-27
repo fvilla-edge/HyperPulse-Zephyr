@@ -25,7 +25,7 @@ import struct
 import json
 import fileinput
 
-MESSAGE_FORMAT = "<IIiihbH"
+MESSAGE_FORMAT = "<IIiihbHBB"
 MESSAGE_SIZE = struct.calcsize(MESSAGE_FORMAT)
 
 
@@ -44,6 +44,8 @@ def unpack(packet: str):
         elevation,
         temperature,
         battery_voltage,
+        humidity_percent,
+        num,
     ) = struct.unpack(MESSAGE_FORMAT, data[:MESSAGE_SIZE])
 
     return {
@@ -54,6 +56,8 @@ def unpack(packet: str):
         "Altitude (meters)": elevation,
         "Temperature (degrees C)": temperature,
         "Battery Voltage (mV)": battery_voltage,
+        "Humidity (%)": humidity_percent,
+        "Num": num,
     }
 
 

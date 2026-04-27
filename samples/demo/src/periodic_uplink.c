@@ -30,6 +30,9 @@ LOG_MODULE_REGISTER(periodic_uplink, LOG_LEVEL_INF);
 #define INVALID_LONGITUDE 1800000000
 #define INVALID_ELEVATION INT16_MIN
 #define INVALID_TIME      0
+#define INVALID_HUMIDITY_PERCENT 255U
+#define DEMO_HUMIDITY_PERCENT    65
+#define DEMO_NUM_VALUE           15U
 
 #define UPLINK_WORK_STACK_SIZE 5120
 #define UPLINK_WORK_PRIORITY   5
@@ -48,6 +51,8 @@ struct uplink_message_t {
 	int16_t elevation_m;         // Elevation in meters
 	int8_t temperature_celsius;  // Internal temperature reading in degrees celsius
 	uint16_t battery_voltage_mv; // Battery voltage in milli-volt
+	uint8_t humidity_percent;    // Relative humidity in percent (demo fixed value)
+	uint8_t num;                 // Fixed demo field
 } __attribute__((packed));
 
 static void printk_buffer_hex(const char *buf, size_t len)
@@ -70,6 +75,7 @@ static void populate_uplink_message(struct uplink_message_t *msg)
 	msg->sequence_number = next_sequence_number();
 
 	const bool gnss_fix_enable = config_get_enable_gnss_state();
+	const bool humidity_enable = config_get_enable_humidity_state();
 
 	// Update location
 	modem_location_info_t location = {0};
@@ -121,6 +127,11 @@ static void populate_uplink_message(struct uplink_message_t *msg)
 		msg->battery_voltage_mv = 0;
 	}
 
+	// Populate humidity with a fixed demo value when enabled.
+	msg->humidity_percent =
+		humidity_enable ? DEMO_HUMIDITY_PERCENT : INVALID_HUMIDITY_PERCENT;
+	msg->num = DEMO_NUM_VALUE;
+
 	return;
 }
 
@@ -136,9 +147,9 @@ static void periodic_uplink_work_handler(struct k_work *work)
 	struct uplink_message_t msg = {0};
 	populate_uplink_message(&msg);
 
-	LOG_INF("Scheduled uplink message: %u %u %d %d %d %hhd %d\n", msg.sequence_number, msg.time,
-		msg.latitude, msg.longitude, msg.elevation_m, msg.temperature_celsius,
-		msg.battery_voltage_mv);
+	LOG_INF("Scheduled uplink message: %u %u %d %d %d %hhd %u %u %u\n", msg.sequence_number,
+		msg.time, msg.latitude, msg.longitude, msg.elevation_m, msg.temperature_celsius,
+		msg.battery_voltage_mv, msg.humidity_percent, msg.num);
 
 	printk("Scheduled uplink message (hex): 0x");
 	printk_buffer_hex((const char *)&msg, sizeof(msg));
