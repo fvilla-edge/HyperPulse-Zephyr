@@ -23,6 +23,7 @@
 #include "hardware_controls.h"
 #include "modem.h"
 #include "periodic_uplink.h"
+#include "potentiometer.h"
 
 LOG_MODULE_REGISTER(periodic_uplink, LOG_LEVEL_INF);
 
@@ -32,7 +33,6 @@ LOG_MODULE_REGISTER(periodic_uplink, LOG_LEVEL_INF);
 #define INVALID_TIME      0
 #define INVALID_HUMIDITY_PERCENT 255U
 #define DEMO_HUMIDITY_PERCENT    65
-#define DEMO_NUM_VALUE           15U
 
 #define UPLINK_WORK_STACK_SIZE 5120
 #define UPLINK_WORK_PRIORITY   5
@@ -67,6 +67,13 @@ static uint32_t next_sequence_number(void)
 {
 	static uint32_t sequence_number = 0;
 	return sequence_number++;
+}
+
+static uint8_t potentiometer_raw_to_u8(uint16_t raw_value)
+{
+	// 12-bit SAADC range (0..4095) mapped into uint8_t (0..255)
+	const uint32_t scaled = ((uint32_t)raw_value * UINT8_MAX) / 4095U;
+	return (scaled > UINT8_MAX) ? UINT8_MAX : (uint8_t)scaled;
 }
 
 static void populate_uplink_message(struct uplink_message_t *msg)
@@ -130,7 +137,16 @@ static void populate_uplink_message(struct uplink_message_t *msg)
 	// Populate humidity with a fixed demo value when enabled.
 	msg->humidity_percent =
 		humidity_enable ? DEMO_HUMIDITY_PERCENT : INVALID_HUMIDITY_PERCENT;
-	msg->num = DEMO_NUM_VALUE;
+
+	uint16_t raw = 0;
+	err = potentiometer_read_raw(&raw);
+	if (err == 0) {
+		// Publish potentiometer level using the existing num byte field.
+		msg->num = potentiometer_raw_to_u8(raw);
+	} else {
+		LOG_ERR("Failed to read potentiometer for num field (err: %d)", err);
+		msg->num = 0;
+	}
 
 	return;
 }

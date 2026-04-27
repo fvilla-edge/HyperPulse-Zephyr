@@ -21,6 +21,7 @@
 #include <zephyr/shell/shell_uart.h>
 #include <zephyr/sys/printk.h>
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <app_version.h>
@@ -32,6 +33,7 @@
 #include "hyperpulse_lib.h"
 #include "modem.h"
 #include "periodic_uplink.h"
+#include "potentiometer.h"
 
 LOG_MODULE_REGISTER(demo_app, LOG_LEVEL_INF);
 
@@ -62,10 +64,26 @@ int main(void)
 	// Signal initialising complete
 	hardware_control_flash_led(LED_1, 1);
 
+	int err = potentiometer_init();
+	if (err != 0) {
+		LOG_ERR("Failed to initialise potentiometer ADC (err: %d)", err);
+	} else {
+		// Test mode: keep printing ADC values and block before GNSS start.
+		printk("Potentiometer test mode: continuous A0 readout\n");
+		for (;;) {
+			uint16_t raw = 0;
+			err = potentiometer_read_raw(&raw);
+			if (err == 0) {
+				printk("  A0 raw: %u\n", raw);
+			} else {
+				printk("  A0 read failed (err: %d)\n", err);
+			}
+			k_sleep(K_MSEC(500));
+		}
+	}
+
 	// Wait for an initial valid GNSS fix before starting the message scheduler
 	app_gnss_wait_for_valid_fix();
-
-	printk("HOLU\n");
 
 	modem_enable_downlink_message_notification();
 

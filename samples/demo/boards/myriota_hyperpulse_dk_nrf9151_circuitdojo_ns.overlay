@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: BSD-3-Clause-Attribution */
+
 /* Disable UART1, for power saving. */
 &uart1 {
 	status = "disabled";
@@ -7,6 +9,11 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+	};
+
+	zephyr,user {
+		/* Application ADC input: A0 is wired to SAADC channel 0 (AIN0 / P0.13). */
+		io-channels = <&adc 0>;
 	};
 
 	aliases {
