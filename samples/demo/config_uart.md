@@ -1,9 +1,5 @@
 # Configuracion UART1 con FTDI (nRF9151 + TF-M)
 
-Este documento deja registrada la configuracion que funciono para recibir datos
-por UART desde un FTDI en el sample `samples/demo`, evitando repetir la etapa
-de prueba y error.
-
 ## Objetivo
 
 Usar `uart1` como puerto de prueba para recibir datos externos (FTDI), dejando
@@ -63,7 +59,7 @@ Ejemplo esperado:
 - `RX: 0x73 's'`
 - `RX: 0x64 'd'`
 
-## Cableado FTDI (checklist)
+## Cableado FTDI
 
 - FTDI TX -> RX de `uart1` en el nRF
 - FTDI RX -> TX de `uart1` en el nRF
@@ -78,22 +74,3 @@ Ejemplo esperado:
 - Stop bits: `1`
 - Flow control: `None`
 
-## Build/flash recomendado
-
-Siempre que cambies algo de TF-M/UART:
-
-1. Hacer **pristine build** (obligatorio).
-2. Flashear imagen completa.
-3. Enviar una cadena conocida (por ejemplo `asdfgh123`).
-4. Verificar en logs que los bytes recibidos coinciden.
-
-## Referencia rapida de diagnostico
-
-Si vuelve a aparecer basura:
-
-1. Confirmar que `CONFIG_TFM_SECURE_UART1=n` sigue presente.
-2. Confirmar que overlays siguen con pinctrl default de `uart1` y sin
-   `hw-flow-control`.
-3. Repetir pristine build.
-4. Verificar cableado TX/RX cruzado y GND comun.
-5. Revisar que el FTDI este en 3.3V TTL y no en otro modo.
