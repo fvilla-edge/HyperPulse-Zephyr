@@ -18,6 +18,7 @@
 #ifndef PERIODIC_UPLINK_H
 #define PERIODIC_UPLINK_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /**
@@ -27,11 +28,19 @@
  */
 
 /**
+ * @brief Initialise periodic uplink work queue and workers.
+ */
+void periodic_uplink_init(void);
+
+/**
+ * @brief Start the periodic uplink scheduler ticks.
+ */
+void periodic_uplink_start(void);
+
+/**
  * @brief Initialise and start the periodic uplink message scheduler.
  *
- * Once started, the scheduler will begin sending uplink messages at the
- * configured interval. This function is called once during system
- * initialization.
+ * Backward-compatible helper equivalent to init + start.
  */
 void periodic_uplink_init_and_start(void);
 
@@ -55,6 +64,27 @@ int periodic_uplink_stop(void);
  * @return 0 if succeeded, negative value if failed
  */
 int periodic_uplink_update_period(const uint32_t new_period);
+
+/**
+ * @brief Send an uplink message immediately with custom num field.
+ *
+ * The message is populated using the same data path as periodic messages,
+ * but the caller provides the value used in the `num` field.
+ *
+ * @param[in] num_value Value to set in message `num` field
+ * @return 0 if succeeded, negative value if failed
+ */
+int periodic_uplink_send_now(uint8_t num_value);
+
+/**
+ * @brief Set whether a valid initial GNSS fix is available.
+ *
+ * When set to false, uplink messages are still generated but location/time
+ * fields that depend on GNSS are populated with invalid placeholders.
+ *
+ * @param[in] ready True once initial GNSS fix is acquired
+ */
+void periodic_uplink_set_gnss_ready(bool ready);
 
 /** @} */ // end of periodic_uplink group
 

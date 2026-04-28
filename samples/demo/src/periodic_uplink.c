@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(periodic_uplink, LOG_LEVEL_INF);
 #define INVALID_TIME      0
 #define INVALID_HUMIDITY_PERCENT 255U
 #define DEMO_HUMIDITY_PERCENT    65
-#define DEMO_NUM_VALUE           15U
+#define PERIODIC_UPLINK_NUM_MARKER 0xFFU
 
 #define UPLINK_WORK_STACK_SIZE 5120
 #define UPLINK_WORK_PRIORITY   5
@@ -40,7 +40,11 @@ K_THREAD_STACK_DEFINE(uplink_work_stack, UPLINK_WORK_STACK_SIZE);
 
 static struct k_work_q uplink_work_q;
 static struct k_work_delayable periodic_uplink_work;
+static struct k_work uart_uplink_work;
 static bool uplink_work_initialised = false;
+static bool periodic_scheduler_started = false;
+static bool initial_gnss_fix_ready = false;
+static uint8_t uart_uplink_num_value = 0;
 
 // Uplink message structure.
 struct uplink_message_t {
@@ -69,7 +73,7 @@ static uint32_t next_sequence_number(void)
 	return sequence_number++;
 }
 
-static void populate_uplink_message(struct uplink_message_t *msg)
+static void populate_uplink_message(struct uplink_message_t *msg, uint8_t num_value)
 {
 	// Set sequence number
 	msg->sequence_number = next_sequence_number();
@@ -77,29 +81,37 @@ static void populate_uplink_message(struct uplink_message_t *msg)
 	const bool gnss_fix_enable = config_get_enable_gnss_state();
 	const bool humidity_enable = config_get_enable_humidity_state();
 
-	// Update location
-	modem_location_info_t location = {0};
-	int err = app_gnss_get_fix(&location);
-	if (err == 0) {
-		msg->latitude = location.position.latitude;
-		msg->longitude = location.position.longitude;
-		msg->elevation_m = location.position.elevation_mm / 1000; // mm -> m
+	// Update location only after initial GNSS readiness to avoid long blocking
+	// acquisition during boot while still allowing UART-triggered uplinks.
+	if (initial_gnss_fix_ready) {
+		modem_location_info_t location = {0};
+		int err = app_gnss_get_fix(&location);
+		if (err == 0) {
+			msg->latitude = location.position.latitude;
+			msg->longitude = location.position.longitude;
+			msg->elevation_m = location.position.elevation_mm / 1000; // mm -> m
 
-		// Populate message with time from GNSS fix if gnss_fix is enabled
-		if (gnss_fix_enable) {
-			msg->time = location.timestamp_s;
+			// Populate message with time from GNSS fix if gnss_fix is enabled
+			if (gnss_fix_enable) {
+				msg->time = location.timestamp_s;
+			}
+		} else {
+			LOG_ERR("Failed to get location");
+			msg->latitude = INVALID_LATITUDE;
+			msg->longitude = INVALID_LONGITUDE;
+			msg->elevation_m = INVALID_ELEVATION;
+			msg->time = INVALID_TIME;
 		}
-
 	} else {
-		LOG_ERR("Failed to get location");
 		msg->latitude = INVALID_LATITUDE;
 		msg->longitude = INVALID_LONGITUDE;
 		msg->elevation_m = INVALID_ELEVATION;
 		msg->time = INVALID_TIME;
 	}
 
-	// Populate message with system time if gnss_fix is disabled
-	if (!gnss_fix_enable) {
+	// Populate message with system time if gnss_fix is disabled and modem is
+	// past initial GNSS wait phase. During boot this can legitimately fail.
+	if (!gnss_fix_enable && initial_gnss_fix_ready) {
 		time_t system_time = 0;
 		if (modem_get_system_time_s(&system_time) == 0) {
 			msg->time = system_time;
@@ -130,28 +142,25 @@ static void populate_uplink_message(struct uplink_message_t *msg)
 	// Populate humidity with a fixed demo value when enabled.
 	msg->humidity_percent =
 		humidity_enable ? DEMO_HUMIDITY_PERCENT : INVALID_HUMIDITY_PERCENT;
-	msg->num = DEMO_NUM_VALUE;
+	msg->num = num_value;
 
 	return;
 }
 
-// Periodic Uplink Message Handler to schedule messages for the network.
-static void periodic_uplink_work_handler(struct k_work *work)
+static int periodic_uplink_send_with_num(uint8_t num_value, const char *source_tag)
 {
-	int32_t start_time_s = k_uptime_seconds();
-
 	// Signal activity
 	hardware_control_flash_led(LED_1, 1);
 
-	// Puuplate uplink message
+	// Populate uplink message
 	struct uplink_message_t msg = {0};
-	populate_uplink_message(&msg);
+	populate_uplink_message(&msg, num_value);
 
-	LOG_INF("Scheduled uplink message: %u %u %d %d %d %hhd %u %u %u\n", msg.sequence_number,
+	LOG_INF("%s uplink message: %u %u %d %d %d %hhd %u %u %u\n", source_tag, msg.sequence_number,
 		msg.time, msg.latitude, msg.longitude, msg.elevation_m, msg.temperature_celsius,
 		msg.battery_voltage_mv, msg.humidity_percent, msg.num);
 
-	printk("Scheduled uplink message (hex): 0x");
+	printk("%s uplink message (hex): 0x", source_tag);
 	printk_buffer_hex((const char *)&msg, sizeof(msg));
 
 	// Schedule uplink message
@@ -160,6 +169,24 @@ static void periodic_uplink_work_handler(struct k_work *work)
 		LOG_ERR("Failed to schedule uplink message (sequence_number: %d) (err: %d)",
 			msg.sequence_number, err);
 	}
+
+	return err;
+}
+
+static void uart_uplink_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	periodic_uplink_send_with_num(uart_uplink_num_value, "UART");
+}
+
+// Periodic Uplink Message Handler to schedule messages for the network.
+static void periodic_uplink_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	int32_t start_time_s = k_uptime_seconds();
+
+	periodic_uplink_send_with_num(PERIODIC_UPLINK_NUM_MARKER, "Periodic");
 
 	// Schedule next uplink message work
 	uint32_t period = config_get_uplink_message_period();
@@ -189,14 +216,48 @@ int periodic_uplink_stop(void)
 	return k_work_cancel_delayable(&periodic_uplink_work);
 }
 
-void periodic_uplink_init_and_start(void)
+int periodic_uplink_send_now(uint8_t num_value)
 {
+	if (!uplink_work_initialised) {
+		return -EAGAIN;
+	}
+
+	uart_uplink_num_value = num_value;
+	return k_work_submit_to_queue(&uplink_work_q, &uart_uplink_work);
+}
+
+void periodic_uplink_set_gnss_ready(bool ready)
+{
+	initial_gnss_fix_ready = ready;
+}
+
+void periodic_uplink_init(void)
+{
+	if (uplink_work_initialised) {
+		return;
+	}
+
 	k_work_queue_start(&uplink_work_q, uplink_work_stack,
 			   K_THREAD_STACK_SIZEOF(uplink_work_stack), UPLINK_WORK_PRIORITY, NULL);
 
 	k_work_init_delayable(&periodic_uplink_work, periodic_uplink_work_handler);
-
-	k_work_reschedule_for_queue(&uplink_work_q, &periodic_uplink_work, K_SECONDS(0));
+	k_work_init(&uart_uplink_work, uart_uplink_work_handler);
 
 	uplink_work_initialised = true;
+}
+
+void periodic_uplink_start(void)
+{
+	if (!uplink_work_initialised || periodic_scheduler_started) {
+		return;
+	}
+
+	k_work_reschedule_for_queue(&uplink_work_q, &periodic_uplink_work, K_SECONDS(0));
+	periodic_scheduler_started = true;
+}
+
+void periodic_uplink_init_and_start(void)
+{
+	periodic_uplink_init();
+	periodic_uplink_start();
 }
