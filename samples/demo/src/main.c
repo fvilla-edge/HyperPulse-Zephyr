@@ -16,6 +16,9 @@
  * limitations under the License.
  *****************************************************************/
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_uart.h>
@@ -35,6 +38,32 @@
 
 LOG_MODULE_REGISTER(demo_app, LOG_LEVEL_INF);
 
+static void uart_test_mode_listen_forever(void)
+{
+	const struct device *uart_dev = DEVICE_DT_GET(DT_NODELABEL(uart1));
+	uint8_t rx_char;
+
+	if (!device_is_ready(uart_dev)) {
+		LOG_ERR("UART test mode unavailable: uart1 is not ready");
+		return;
+	}
+
+	printk("UART test mode active on %s (FTDI). Waiting for RX bytes...\n", uart_dev->name);
+
+	for (;;) {
+		if (uart_poll_in(uart_dev, &rx_char) == 0) {
+			if (rx_char == '\r' || rx_char == '\n') {
+				printk("\n");
+				continue;
+			}
+
+			printk("RX: 0x%02X '%c'\n", rx_char, rx_char);
+		} else {
+			k_sleep(K_MSEC(10));
+		}
+	}
+}
+
 int main(void)
 {
 	printk("Demo Application: v%s\n", APP_VERSION_STRING);
@@ -49,18 +78,19 @@ int main(void)
 	// Initialise configuration
 	config_init();
 
-
-	
-	// Start shell after configuration has been initialised
-	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL)) {
-		shell_start(shell_backend_uart_get_ptr());
-	}
-
 	// Initialise hardware control
 	hardware_control_init();
 
 	// Signal initialising complete
 	hardware_control_flash_led(LED_1, 1);
+
+	// Permanent UART test mode: keep listening and do not continue to GNSS.
+	uart_test_mode_listen_forever();
+
+	// Start shell after configuration has been initialised
+	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL)) {
+		shell_start(shell_backend_uart_get_ptr());
+	}
 
 	// Wait for an initial valid GNSS fix before starting the message scheduler
 	app_gnss_wait_for_valid_fix();

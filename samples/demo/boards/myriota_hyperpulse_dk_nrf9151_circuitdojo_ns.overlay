@@ -1,6 +1,11 @@
-/* Disable UART1, for power saving. */
+/* Keep UART1 enabled for external FTDI test mode. */
 &uart1 {
-	status = "disabled";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+	/delete-property/ hw-flow-control;
 };
 
 / {
