@@ -148,12 +148,6 @@ int main(void)
 		shell_start(shell_backend_uart_get_ptr());
 	}
 
-	// Start UART listener immediately so incoming manual data is captured
-	// even while waiting for the first GNSS fix.
-	periodic_uplink_set_gnss_ready(false);
-	periodic_uplink_init();
-	uart_line_listener_start();
-
 	// Wait for an initial valid GNSS fix before starting the message scheduler
 	app_gnss_wait_for_valid_fix();
 	periodic_uplink_set_gnss_ready(true);
@@ -161,7 +155,8 @@ int main(void)
 	printk("HOLU\n");
 
 	modem_enable_downlink_message_notification();
-	periodic_uplink_start();
+	periodic_uplink_init_and_start();
+	uart_line_listener_start();
 
 	// Signal message scheduler start
 	hardware_control_flash_led(LED_1, 2);
