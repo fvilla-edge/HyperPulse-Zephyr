@@ -41,6 +41,8 @@ LOG_MODULE_REGISTER(demo_app, LOG_LEVEL_INF);
 
 #define UART_LISTENER_STACK_SIZE 1024
 #define UART_LISTENER_PRIORITY   7
+#define ENABLE_PERIODIC_UPLINK  0
+#define ENABLE_UART_UPLINK      1
 
 K_THREAD_STACK_DEFINE(uart_listener_stack, UART_LISTENER_STACK_SIZE);
 static struct k_thread uart_listener_thread;
@@ -155,8 +157,21 @@ int main(void)
 	printk("HOLU\n");
 
 	modem_enable_downlink_message_notification();
-	periodic_uplink_init_and_start();
-	uart_line_listener_start();
+	if (ENABLE_PERIODIC_UPLINK || ENABLE_UART_UPLINK) {
+		periodic_uplink_init();
+	}
+
+	if (ENABLE_PERIODIC_UPLINK) {
+		periodic_uplink_start();
+	} else {
+		LOG_INF("Periodic uplink disabled");
+	}
+
+	if (ENABLE_UART_UPLINK) {
+		uart_line_listener_start();
+	} else {
+		LOG_INF("UART-triggered uplink disabled");
+	}
 
 	// Signal message scheduler start
 	hardware_control_flash_led(LED_1, 2);
