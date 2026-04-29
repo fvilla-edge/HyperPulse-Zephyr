@@ -35,7 +35,7 @@
 LOG_MODULE_REGISTER(demo_app, LOG_LEVEL_INF);
 
 #define ENABLE_PERIODIC_UPLINK  0
-#define ENABLE_UART_UPLINK      0
+#define ENABLE_UART_UPLINK      1
 
 int main(void)
 {

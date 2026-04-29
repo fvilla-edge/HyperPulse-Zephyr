@@ -207,6 +207,12 @@ int periodic_uplink_update_period(const uint32_t new_period)
 		return 0;
 	}
 
+	if (!periodic_scheduler_started) {
+		// Periodic scheduling is disabled in this app mode.
+		// Keep the updated config value, but do not arm periodic work.
+		return 0;
+	}
+
 	return k_work_reschedule_for_queue(&uplink_work_q, &periodic_uplink_work,
 					   K_SECONDS(new_period));
 }
