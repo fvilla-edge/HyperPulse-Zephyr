@@ -20,7 +20,8 @@ file(
   src/main.c
   src/modem.c
   src/modem_urc.c
-  src/periodic_uplink.c)
+  src/periodic_uplink.c
+  src/uart_uplink.c)
 target_sources(app PRIVATE ${app_sources})
 
 include_directories(include)
