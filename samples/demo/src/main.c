@@ -62,10 +62,10 @@ int main(void)
 	// Signal initialising complete
 	hardware_control_flash_led(LED_1, 1);
 
+	printk("HOLUS\n");
+
 	// Wait for an initial valid GNSS fix before starting the message scheduler
 	app_gnss_wait_for_valid_fix();
-
-	printk("HOLU\n");
 
 	modem_enable_downlink_message_notification();
 

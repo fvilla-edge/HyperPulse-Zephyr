@@ -16,6 +16,7 @@ file(
   app_sources
   src/app_gnss.c
   src/configuration.c
+  src/downlink_num.c
   src/hardware_controls.c
   src/main.c
   src/modem.c

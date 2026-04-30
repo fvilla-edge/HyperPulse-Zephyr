@@ -20,6 +20,7 @@
 
 #include "app_gnss.h"
 #include "configuration.h"
+#include "downlink_num.h"
 #include "hardware_controls.h"
 #include "modem.h"
 #include "periodic_uplink.h"
@@ -131,6 +132,7 @@ static void populate_uplink_message(struct uplink_message_t *msg)
 	msg->humidity_percent =
 		humidity_enable ? DEMO_HUMIDITY_PERCENT : INVALID_HUMIDITY_PERCENT;
 	msg->num = DEMO_NUM_VALUE;
+	(void)downlink_num_get(&msg->num);
 
 	return;
 }

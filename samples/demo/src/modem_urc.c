@@ -18,7 +18,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include <stdio.h>
+
 #include "app_gnss.h"
+#include "downlink_num.h"
 #include "modem.h"
 
 LOG_MODULE_REGISTER(modem_urc, LOG_LEVEL_INF);
@@ -58,6 +61,12 @@ static void process_urc_message_received(const char *const response)
 	int err =
 		modem_get_downlink_message(response, downlink_message_hex, &downlink_message_size);
 	if (err == 0) {
+		unsigned int downlink_num = 0;
+		if (downlink_message_size > 0 && sscanf(downlink_message_hex, "%2x", &downlink_num) == 1) {
+			downlink_num_set((uint8_t)downlink_num);
+			LOG_INF("Updated num field from DL byte: %u", downlink_num);
+		}
+
 		LOG_INF("Received DL message (len = %d bytes) : 0x%s\n", downlink_message_size,
 			downlink_message_hex);
 	} else {
