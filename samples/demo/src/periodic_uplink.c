@@ -41,6 +41,7 @@ K_THREAD_STACK_DEFINE(uplink_work_stack, UPLINK_WORK_STACK_SIZE);
 
 static struct k_work_q uplink_work_q;
 static struct k_work_delayable periodic_uplink_work;
+static struct k_work immediate_uplink_work;
 static bool uplink_work_initialised = false;
 
 // Uplink message structure.
@@ -138,10 +139,8 @@ static void populate_uplink_message(struct uplink_message_t *msg)
 }
 
 // Periodic Uplink Message Handler to schedule messages for the network.
-static void periodic_uplink_work_handler(struct k_work *work)
+static void schedule_uplink_message_once(void)
 {
-	int32_t start_time_s = k_uptime_seconds();
-
 	// Signal activity
 	hardware_control_flash_led(LED_1, 1);
 
@@ -162,6 +161,15 @@ static void periodic_uplink_work_handler(struct k_work *work)
 		LOG_ERR("Failed to schedule uplink message (sequence_number: %d) (err: %d)",
 			msg.sequence_number, err);
 	}
+}
+
+// Periodic Uplink Message Handler to schedule messages for the network.
+static void periodic_uplink_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	int32_t start_time_s = k_uptime_seconds();
+
+	schedule_uplink_message_once();
 
 	// Schedule next uplink message work
 	uint32_t period = config_get_uplink_message_period();
@@ -173,6 +181,12 @@ static void periodic_uplink_work_handler(struct k_work *work)
 	}
 
 	return;
+}
+
+static void immediate_uplink_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	schedule_uplink_message_once();
 }
 
 int periodic_uplink_update_period(const uint32_t new_period)
@@ -191,12 +205,22 @@ int periodic_uplink_stop(void)
 	return k_work_cancel_delayable(&periodic_uplink_work);
 }
 
+int periodic_uplink_trigger_now(void)
+{
+	if (!uplink_work_initialised) {
+		return -EAGAIN;
+	}
+
+	return k_work_submit_to_queue(&uplink_work_q, &immediate_uplink_work);
+}
+
 void periodic_uplink_init_and_start(void)
 {
 	k_work_queue_start(&uplink_work_q, uplink_work_stack,
 			   K_THREAD_STACK_SIZEOF(uplink_work_stack), UPLINK_WORK_PRIORITY, NULL);
 
 	k_work_init_delayable(&periodic_uplink_work, periodic_uplink_work_handler);
+	k_work_init(&immediate_uplink_work, immediate_uplink_work_handler);
 
 	k_work_reschedule_for_queue(&uplink_work_q, &periodic_uplink_work, K_SECONDS(0));
 

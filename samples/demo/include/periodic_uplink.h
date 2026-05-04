@@ -56,6 +56,16 @@ int periodic_uplink_stop(void);
  */
 int periodic_uplink_update_period(const uint32_t new_period);
 
+/**
+ * @brief Trigger an immediate uplink message scheduling run.
+ *
+ * Queues uplink work to run as soon as possible without disabling
+ * periodic scheduling.
+ *
+ * @return 0 if succeeded, negative value if failed
+ */
+int periodic_uplink_trigger_now(void);
+
 /** @} */ // end of periodic_uplink group
 
 #endif /* PERIODIC_UPLINK_H */

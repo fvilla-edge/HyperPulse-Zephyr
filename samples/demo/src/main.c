@@ -62,7 +62,7 @@ int main(void)
 	// Signal initialising complete
 	hardware_control_flash_led(LED_1, 1);
 
-	printk("HOLUS\n");
+	printk("HOLAS\n");
 
 	// Wait for an initial valid GNSS fix before starting the message scheduler
 	app_gnss_wait_for_valid_fix();

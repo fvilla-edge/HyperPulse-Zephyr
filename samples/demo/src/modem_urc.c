@@ -23,6 +23,7 @@
 #include "app_gnss.h"
 #include "downlink_num.h"
 #include "modem.h"
+#include "periodic_uplink.h"
 
 LOG_MODULE_REGISTER(modem_urc, LOG_LEVEL_INF);
 
@@ -65,6 +66,11 @@ static void process_urc_message_received(const char *const response)
 		if (downlink_message_size > 0 && sscanf(downlink_message_hex, "%2x", &downlink_num) == 1) {
 			downlink_num_set((uint8_t)downlink_num);
 			LOG_INF("Updated num field from DL byte: %u", downlink_num);
+
+			err = periodic_uplink_trigger_now();
+			if (err < 0) {
+				LOG_ERR("Failed to trigger immediate uplink from DL (%d)", err);
+			}
 		}
 
 		LOG_INF("Received DL message (len = %d bytes) : 0x%s\n", downlink_message_size,
