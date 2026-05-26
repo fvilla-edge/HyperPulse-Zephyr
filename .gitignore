@@ -55,6 +55,8 @@ version.conf
 
 # Zephyr related
 build*
+# build* also matches scripts/build_flash.sh; keep the helper script tracked.
+!scripts/build_flash.sh
 sparkfun
 .vscode
 twister-out*
